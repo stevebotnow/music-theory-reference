@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Music Theory Reference — Chords, Scales, Licks in All 12 Keys</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+          mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+        },
+      },
+    },
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Inter', system-ui, sans-serif; }
+
+  /* Fretboard (scale view) */
+  .fb { background: #f8fafc; border-radius: 8px; padding: 12px; }
+  .dark .fb { background: #0f172a; }
+  .fb svg { display: block; }
+  .fb .str { stroke: #475569; stroke-width: 1.2; }
+  .dark .fb .str { stroke: #94a3b8; }
+  .fb .fret { stroke: #cbd5e1; stroke-width: 1; }
+  .dark .fb .fret { stroke: #334155; }
+  .fb .nut { stroke-width: 5; stroke: #475569; }
+  .dark .fb .nut { stroke: #cbd5e1; }
+  .fb .fretnum { fill: #64748b; font-size: 10px; font-family: ui-monospace, monospace; }
+  .dark .fb .fretnum { fill: #94a3b8; }
+  .fb .strlabel { fill: #475569; font-size: 11px; font-weight: 700; font-family: ui-monospace, monospace; }
+  .dark .fb .strlabel { fill: #cbd5e1; }
+  .fb .note.root { fill: #f97316; }
+  .fb .note.scale { fill: #6366f1; }
+  .fb .note.in-root-chord { fill: #10b981; }
+  .fb .notelabel { fill: white; font-size: 9px; font-weight: 700; font-family: ui-monospace, monospace; }
+
+  /* Chord diagram */
+  .chord-box { background: #f8fafc; border-radius: 6px; padding: 10px; }
+  .dark .chord-box { background: #0f172a; }
+  .chord-box svg { display: block; margin: 0 auto; }
+  .chord-box .nut { stroke: #334155; stroke-width: 4; }
+  .dark .chord-box .nut { stroke: #cbd5e1; }
+  .chord-box .fret { stroke: #94a3b8; stroke-width: 1; }
+  .dark .chord-box .fret { stroke: #64748b; }
+  .chord-box .str { stroke: #475569; stroke-width: 1.4; }
+  .dark .chord-box .str { stroke: #94a3b8; }
+  .chord-box .fret-label { font-family: ui-monospace, monospace; font-size: 11px; font-weight: 700; fill: #f97316; }
+  .dark .chord-box .fret-label { fill: #fb923c; }
+  .chord-box .finger { fill: #f97316; }
+  .chord-box .finger-label { fill: white; font-size: 11px; font-weight: 700; text-anchor: middle; }
+  .chord-box .open { fill: none; stroke: #475569; stroke-width: 2.5; }
+  .dark .chord-box .open { stroke: #cbd5e1; }
+  .chord-box .muted-x { stroke: #64748b; stroke-width: 2; fill: none; }
+  .dark .chord-box .muted-x { stroke: #94a3b8; }
+  .chord-box .marker-text { font-family: ui-monospace, monospace; font-size: 10px; font-weight: 600; fill: #334155; }
+  .dark .chord-box .marker-text { fill: #cbd5e1; }
+
+  /* Tab display */
+  pre.tab {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    white-space: pre;
+    line-height: 1.5;
+    font-size: 0.85rem;
+    margin: 0;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { height: 8px; width: 8px; }
+  ::-webkit-scrollbar-thumb { background: rgba(100,116,139,0.4); border-radius: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  .key-tab.active {
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    color: white;
+    box-shadow: 0 4px 12px -2px rgba(249,115,22,0.4);
+  }
+  .key-tab:not(.active):hover { background: rgba(249,115,22,0.1); }
+
+  /* Scale expand modal */
+  #scale-modal { display: none; }
+  #scale-modal.open { display: flex; }
+  /* Hide every expand button while the modal is open (the modal renders the
+     same scale card, which would otherwise re-trigger itself). */
+  #scale-modal.open ~ * .scale-expand-btn,
+  body:has(#scale-modal.open) .scale-expand-btn { display: none; }
+  #scale-modal-body .fb { padding: 18px; }
+  /* Larger note labels in modal — viewBox is scaled, but CSS font-size is fixed */
+  #scale-modal-body .fb .notelabel { font-size: 18px; }
+  #scale-modal-body .fb .strlabel { font-size: 22px; }
+  #scale-modal-body .fb .fretnum { font-size: 20px; }
+</style>
+</head>
+
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors min-h-screen">
+
+  <header class="sticky top-0 z-40 backdrop-blur-md bg-white/85 dark:bg-slate-950/85 border-b border-slate-200 dark:border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+      <div class="min-w-0">
+        <h1 class="text-base sm:text-xl font-bold tracking-tight truncate">Music Theory Reference</h1>
+        <p class="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Chords · Scales · Licks in all 12 keys · guitar fretboard</p>
+      </div>
+      <button id="theme-toggle" class="shrink-0 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-medium transition" aria-label="Toggle theme">
+        <span class="dark:hidden">☀ Light</span>
+        <span class="hidden dark:inline">☾ Dark</span>
+      </button>
+    </div>
+  </header>
+
+  <nav class="sticky top-[57px] sm:top-[65px] z-30 bg-white/95 dark:bg-slate-950/95 border-b border-slate-200 dark:border-slate-800 backdrop-blur">
+    <div class="max-w-7xl mx-auto px-2 py-2 overflow-x-auto">
+      <div class="flex gap-1 min-w-fit" id="key-tabs"></div>
+    </div>
+  </nav>
+
+  <main class="max-w-7xl mx-auto px-4 py-6 sm:py-8" id="main-content"></main>
+
+  <footer class="max-w-7xl mx-auto px-4 pb-10 pt-4 text-center text-xs text-slate-500 dark:text-slate-500">
+    root (orange) · scale tone (indigo) · chord tone (green) — fretboard diagrams show notes across frets 0–14
+  </footer>
+
+  <!-- Scale expand modal -->
+  <div id="scale-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="scale-modal-title">
+    <div id="scale-modal-backdrop" class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"></div>
+    <div class="relative w-full max-w-[1400px] max-h-[95vh] rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-2xl overflow-hidden flex flex-col">
+      <div class="px-5 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 shrink-0">
+        <div class="min-w-0">
+          <h2 id="scale-modal-title" class="font-semibold text-base sm:text-lg tracking-tight truncate"></h2>
+          <div id="scale-modal-formula" class="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5"></div>
+        </div>
+        <button type="button" id="scale-modal-close" class="shrink-0 w-9 h-9 inline-flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 transition" aria-label="Close expanded diagram" title="Close (Esc)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div id="scale-modal-body" class="overflow-auto p-4 sm:p-6 flex-1"></div>
+    </div>
+  </div>
+
+<script>
+'use strict';
+
+// =====================================================================
+//   DATA
+// =====================================================================
+
+const KEYS = ['A', 'Bb', 'B', 'C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab'];
+
+const KEY_LABELS = {
+  'A':  'A',
+  'Bb': 'A# / Bb',
+  'B':  'B',
+  'C':  'C',
+  'Db': 'C# / Db',
+  'D':  'D',
+  'Eb': 'D# / Eb',
+  'E':  'E',
+  'F':  'F',
+  'F#': 'F# / Gb',
+  'G':  'G',
+  'Ab': 'G# / Ab',
+};
+
+const KEY_SCALE_NOTES = {
+  'A':  ['A', 'B', 'C#', 'D', 'E', 'F#', 'G#'],
+  'Bb': ['Bb', 'C', 'D', 'Eb', 'F', 'G', 'A'],
+  'B':  ['B', 'C#', 'D#', 'E', 'F#', 'G#', 'A#'],
+  'C':  ['C', 'D', 'E', 'F', 'G', 'A', 'B'],
+  'Db': ['Db', 'Eb', 'F', 'Gb', 'Ab', 'Bb', 'C'],
+  'D':  ['D', 'E', 'F#', 'G', 'A', 'B', 'C#'],
+  'Eb': ['Eb', 'F', 'G', 'Ab', 'Bb', 'C', 'D'],
+  'E':  ['E', 'F#', 'G#', 'A', 'B', 'C#', 'D#'],
+  'F':  ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'],
+  'F#': ['F#', 'G#', 'A#', 'B', 'C#', 'D#', 'E#'],
+  'G':  ['G', 'A', 'B', 'C', 'D', 'E', 'F#'],
+  'Ab': ['Ab', 'Bb', 'C', 'Db', 'Eb', 'F', 'G'],
+};
+
+const SCALE_INTERVALS = {
+  major:           [0, 2, 4, 5, 7, 9, 11],
+  naturalMinor:    [0, 2, 3, 5, 7, 8, 10],
+  harmonicMinor:   [0, 2, 3, 5, 7, 8, 11],
+  melodicMinor:    [0, 2, 3, 5, 7, 9, 11],
+  majorPentatonic: [0, 2, 4, 7, 9],
+  minorPentatonic: [0, 3, 5, 7, 10],
+  blues:           [0, 3, 5, 6, 7, 10],
+  dorian:          [0, 2, 3, 5, 7, 9, 10],
+  phrygian:        [0, 1, 3, 5, 7, 8, 10],
+  lydian:          [0, 2, 4, 6, 7, 9, 11],
+  mixolydian:      [0, 2, 4, 5, 7, 9, 10],
+};
+
+const SCALE_NAMES = {
+  major:           'Major (Ionian)',
+  naturalMinor:    'Natural Minor (Aeolian)',
+  harmonicMinor:   'Harmonic Minor',
+  melodicMinor:    'Melodic Minor (asc)',
+  majorPentatonic: 'Major Pentatonic',
+  minorPentatonic: 'Minor Pentatonic',
+  blues:           'Blues Scale',
+  dorian:          'Dorian',
+  phrygian:        'Phrygian',
+  lydian:          'Lydian',
+  mixolydian:      'Mixolydian',
+};
+
+const SCALE_FORMULAS = {
+  major:           '1 2 3 4 5 6 7',
+  naturalMinor:    '1 2 b3 4 5 b6 b7',
+  harmonicMinor:   '1 2 b3 4 5 b6 7',
+  melodicMinor:    '1 2 b3 4 5 6 7',
+  majorPentatonic: '1 2 3 5 6',
+  minorPentatonic: '1 b3 4 5 b7',
+  blues:           '1 b3 4 b5 5 b7',
+  dorian:          '1 2 b3 4 5 6 b7',
+  phrygian:        '1 b2 b3 4 5 b6 b7',
+  lydian:          '1 2 3 #4 5 6 7',
+  mixolydian:      '1 2 3 4 5 6 b7',
+};
+
+const DIATONIC_DEGREES = ['I', 'ii', 'iii', 'IV', 'V', 'vi', 'vii\u00b0'];
+
+const MAJOR_TRIADS =  ['M',  'm',  'm',  'M',  'M',  'm',  'dim'];
+const MAJOR_7THS =    ['maj7','m7','m7','maj7','7','m7','m7b5'];
+
+function chordName(root, quality) {
+  if (quality === 'M') return root;
+  if (quality === 'm') return root + 'm';
+  if (quality === '7') return root + '7';
+  if (quality === 'maj7') return root + 'maj7';
+  if (quality === 'm7') return root + 'm7';
+  if (quality === 'dim') return root + 'dim';
+  if (quality === 'm7b5') return root + 'm7b5';
+  if (quality === 'sus4') return root + 'sus4';
+  if (quality === '7sus4') return root + '7sus4';
+  return root;
+}
+
+// Voicings: [s6(low E), s5(A), s4(D), s3(G), s2(B), s1(high E)]  null=muted, 0=open, +=fret
+// Standard guitar chord voicings using proper barre chord shapes.
+// Array index: [s6=E2, s5=A2, s4=D3, s3=G3, s2=B3, s1=E4]
+// null = muted, 0 = open, N = fret N
+const VOICINGS = {
+  M: {
+    // Standard major barre chord shapes
+    'A':  [null, 0, 2, 2, 2, 0],   // x02220
+    'Bb': [null, 1, 3, 3, 3, 1],   // x13331 bar 1
+    'B':  [null, 2, 4, 4, 4, 2],   // x24442 bar 2
+    'C':  [null, 3, 2, 0, 1, 0],   // x32010
+    'Db': [null, 1, 3, 3, 3, 1],   // x13331 bar 1
+    'D':  [null, null, 0, 2, 3, 2], // xx0232
+    'Eb': [null, null, 1, 3, 4, 3], // xx1343
+    'E':  [0, 2, 2, 1, 0, 0],    // 022100
+    'F':  [1, 3, 3, 2, 1, 1],    // 133211 bar 1
+    'F#': [2, 4, 4, 3, 2, 2],    // 244322 bar 2
+    'G':  [3, 2, 0, 0, 0, 3],    // 320003
+    'Ab': [4, 6, 6, 5, 4, 4],    // 466544 bar 4
+  },
+  m: {
+    // Standard minor chord shapes
+    'A':  [null, 0, 2, 2, 1, 0],   // x02210
+    'Bb': [null, 1, 3, 3, 2, 1],   // x13321 bar 1
+    'B':  [null, 2, 4, 4, 3, 2],   // x24432 bar 2
+    'C':  [null, 3, 5, 5, 4, 3],   // x35543 bar 3
+    'Db': [null, 4, 6, 6, 5, 4],   // x46654 bar 4
+    'D':  [null, null, 0, 2, 3, 1], // xx0231
+    'Eb': [null, null, 1, 3, 4, 2], // xx1342
+    'E':  [0, 2, 2, 0, 0, 0],    // 022000
+    'F':  [1, 3, 3, 1, 1, 1],    // 133111 bar 1
+    'F#': [2, 4, 4, 2, 2, 2],    // 244222 bar 2
+    'G':  [3, 5, 5, 3, 3, 3],    // 355533 bar 3
+    'Ab': [4, 6, 6, 4, 4, 4],    // 466444 bar 4
+  },
+  '7': {
+    // Dominant 7 chord shapes
+    'A':  [null, 0, 2, 0, 2, 0],   // x02020
+    'Bb': [null, 1, 3, 1, 3, 1],   // x13131 bar 1
+    'B':  [null, 2, 1, 2, 0, 2],   // x21202
+    'C':  [null, 3, 2, 3, 1, 0],   // x32310
+    'Db': [null, 4, 6, 4, 6, 4],   // x46464 bar 4
+    'D':  [null, null, 0, 2, 1, 2], // xx0212
+    'Eb': [null, null, 1, 3, 2, 3], // xx1323
+    'E':  [0, 2, 0, 1, 3, 0],    // 020100
+    'F':  [1, 3, 1, 2, 1, 1],    // 131211 bar 1
+    'F#': [2, 4, 2, 3, 2, 2],    // 242322 bar 2
+    'G':  [3, 2, 0, 0, 0, 1],    // 320001
+    'Ab': [4, 6, 4, 5, 4, 4],    // 464544 bar 4
+  },
+  maj7: {
+    // Major 7 chord shapes
+    'A':  [null, 0, 2, 1, 2, 0],   // x02120
+    'Bb': [null, 1, 3, 2, 3, 1],   // x13231 bar 1
+    'B':  [null, 2, 4, 3, 4, 2],   // x24342 bar 2
+    'C':  [null, 3, 2, 0, 0, 0],   // x32000
+    'Db': [null, 4, 6, 5, 6, 4],   // x46564 bar 4
+    'D':  [null, null, 0, 2, 2, 2], // xx0222
+    'Eb': [null, null, 1, 3, 3, 3], // xx1333
+    'E':  [0, 2, 1, 1, 0, 0],    // 021100
+    'F':  [1, 3, 3, 2, 1, 1],    // 133211 bar 1
+    'F#': [2, 4, 3, 3, 2, 2],    // 243322 bar 2
+    'G':  [3, 2, 0, 0, 0, 2],    // 320002
+    'Ab': [4, 6, 5, 5, 4, 4],    // 465544 bar 4
+  },
+  m7: {
+    // Minor 7 chord shapes
+    'A':  [null, 0, 2, 0, 1, 0],   // x02010
+    'Bb': [null, 1, 3, 1, 2, 1],   // x13121 bar 1
+    'B':  [null, 2, 0, 2, 0, 2],   // x20202
+    'C':  [null, 3, 5, 3, 4, 3],   // x35343 bar 3
+    'Db': [null, 4, 6, 4, 5, 4],   // x46454 bar 4
+    'D':  [null, null, 0, 2, 1, 1], // xx0211
+    'Eb': [null, null, 1, 3, 2, 1], // xx1321
+    'E':  [0, 2, 0, 0, 0, 0],    // 020000
+    'F':  [1, 3, 1, 1, 1, 1],    // 131111 bar 1
+    'F#': [2, 4, 2, 2, 2, 2],    // 242222 bar 2
+    'G':  [3, 5, 3, 3, 3, 3],    // 353333 bar 3
+    'Ab': [4, 6, 4, 4, 4, 4],    // 464444 bar 4
+  },
+  dim: {
+    // Diminished chord shapes
+    'A':  [null, 0, 1, 2, 1, null],   // x01210
+    'Bb': [null, 1, 2, 3, 2, null],   // x12321 bar 1
+    'B':  [null, 2, 3, 4, 3, null],   // x23432 bar 2
+    'C':  [null, 3, 4, 5, 4, null],   // x34543 bar 3
+    'D':  [null, null, 0, 1, 3, 1], // xx0131
+    'Db': [null, null, 1, 2, 4, 2], // xx1242
+    'Eb': [null, null, 1, 2, 4, 2], // xx1242
+    'E':  [0, 1, 2, 0, null, null], // 012000
+    'F':  [1, 2, 3, 1, null, null], // 123100 bar 1
+    'F#': [2, 3, 4, 2, null, null], // 234211 bar 2
+    'G':  [3, 4, 5, 3, null, null], // 345433 bar 3
+    'Ab': [4, 5, 6, 4, null, null], // 456544 bar 4
+  },
+  m7b5: {
+    // Half-diminished chord shapes
+    'A':  [null, 0, 1, 0, 1, null],   // x01010
+    'Bb': [null, 1, 2, 1, 2, null],   // x12121 bar 1
+    'B':  [null, 2, 0, 2, 0, 1],   // x20201
+    'C':  [null, 3, 4, 3, 4, null],   // x34343 bar 3
+    'D':  [null, null, 0, 1, 0, 1], // xx0101
+    'Db': [null, null, 1, 2, 1, 2], // xx1212
+    'Eb': [null, null, 1, 2, 1, 2], // xx1212
+    'E':  [0, 1, 0, 0, null, null], // 010000
+    'F':  [1, null, 1, 1, 0, 1], // 1x111
+    'F#': [2, null, 2, 2, 0, 0], // 2x220
+    'G':  [3, null, 3, 3, 1, 1], // 3x331
+    'Ab': [4, null, 4, 4, 2, 2], // 4x442
+  },
+  sus4: {
+    // Sus4 chord shapes
+    'A':  [null, 0, 2, 2, 3, 0],   // x02230
+    'Bb': [null, 1, 3, 3, 4, 1],   // x13341 bar 1
+    'B':  [null, 2, 4, 4, 5, 2],   // x24452 bar 2
+    'C':  [null, 3, 3, 0, 1, 3],   // x33013
+    'D':  [null, null, 0, 2, 3, 3], // xx0233
+    'E':  [0, 2, 2, 2, 0, 0],    // 022200
+    'F':  [1, 3, 3, 3, 1, 1],    // 133311 bar 1
+    'G':  [3, 3, 0, 0, 1, 3],    // 330013
+  },
+  '7sus4': {
+    // 7sus4 chord shapes
+    'A':  [null, 0, 2, 0, 3, 0],   // x02030
+    'Bb': [null, 1, 3, 1, 4, 1],   // x13141 bar 1
+    'B':  [null, 2, 1, 2, 0, 2],   // x21202
+    'C':  [null, 3, 2, 3, 1, 3],   // x32313
+    'D':  [null, null, 0, 2, 1, 3], // xx0213
+    'E':  [0, 2, 2, 2, 3, 0],    // 022230
+    'F':  [1, 3, 1, 3, 1, 1],    // 131311 bar 1
+    'G':  [3, 2, 0, 0, 1, 1],    // 320011
+  },
+};
+
+// =====================================================================
+//   FRETBOARD MATH
+// =====================================================================
+
+const STANDARD_TUNING = [40, 45, 50, 55, 59, 64]; // E2 A2 D3 G3 B3 E4
+
+const PC_MAP = { 'C':0, 'C#':1, 'Db':1, 'D':2, 'D#':3, 'Eb':3, 'E':4, 'F':5, 'F#':6, 'Gb':6, 'G':7, 'G#':8, 'Ab':8, 'A':9, 'A#':10, 'Bb':10, 'B':11 };
+const FLAT_TO_SHARP = { 'Db':'C#', 'Eb':'D#', 'Gb':'F#', 'Ab':'G#', 'Bb':'A#' };
+const SHARP_TO_FLAT = { 'C#':'Db', 'D#':'Eb', 'F#':'Gb', 'G#':'Ab', 'A#':'Bb' };
+const FLAT_KEYS = new Set(['F','Bb','Eb','Ab','Db','Gb']);
+const PC_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+function noteToPC(note) { return PC_MAP[note]; }
+function isFlatKey(key) { return FLAT_KEYS.has(key); }
+
+function pcToName(pc, key) {
+  const sharpName = PC_NAMES[pc];
+  if (isFlatKey(key)) {
+    return SHARP_TO_FLAT[sharpName] || sharpName;
+  }
+  return sharpName;
+}
+
+function getScalePositions(key, scaleName, fretStart = 0, fretEnd = 14) {
+  const intervals = SCALE_INTERVALS[scaleName];
+  if (!intervals) return [];
+  const rootPC = noteToPC(key);
+  const allowedPCs = new Set(intervals.map(i => (rootPC + i) % 12));
+
+  const positions = [];
+  for (let s = 0; s < 6; s++) {
+    for (let f = fretStart; f <= fretEnd; f++) {
+      const midi = STANDARD_TUNING[s] + f;
+      const pc = midi % 12;
+      if (allowedPCs.has(pc)) {
+        const noteName = pcToName(pc, key);
+        const semitoneFromRoot = (pc - rootPC + 12) % 12;
+        const scaleStep = intervals.indexOf(semitoneFromRoot);
+        positions.push({
+          stringIdx: s,
+          fret: f,
+          pc,
+          noteName,
+          scaleStep,
+          isRoot: pc === rootPC,
+        });
+      }
+    }
+  }
+  return positions;
+}
+
+// =====================================================================
+//   RENDERING — FRETBOARD
+// =====================================================================
+
+function renderFretboard(positions, opts = {}) {
+  const fretStart = opts.fretStart ?? 0;
+  const fretEnd = opts.fretEnd ?? 14;
+  const showStep = opts.showStep !== false;
+  // Scale multiplier for modal: enlarges cells, strings, dots, labels in proportion.
+  const sc = opts.scale || 1;
+
+  const totalFrets = fretEnd - fretStart + 1;
+  const paddingL = 30 * sc, paddingR = 14 * sc, paddingT = 18 * sc, paddingB = 18 * sc;
+  const cellW = 36 * sc;
+  const stringH = 22 * sc;
+  const width = paddingL + cellW * totalFrets + paddingR;
+  const height = paddingT + stringH * 5 + paddingB;
+
+  let svg = `<svg viewBox="0 0 ${width} ${height}" width="100%" style="max-width:${width}px;height:auto;" xmlns="http://www.w3.org/2000/svg">`;
+
+  if (fretStart === 0) {
+    svg += `<line class="nut" x1="${paddingL}" y1="${paddingT}" x2="${paddingL}" y2="${paddingT + stringH * 5}" />`;
+  }
+  for (let i = 0; i <= totalFrets; i++) {
+    const x = paddingL + cellW * i;
+    svg += `<line class="fret" x1="${x}" y1="${paddingT}" x2="${x}" y2="${paddingT + stringH * 5}" />`;
+  }
+  // Chord-chart convention: high E at top, low E at bottom (matches the
+  // 5 - pos.stringIdx flip below, so the data and labels stay in sync).
+  const stringNames = ['E','B','G','D','A','E'];
+  for (let s = 0; s < 6; s++) {
+    const y = paddingT + stringH * s;
+    svg += `<line class="str" x1="${paddingL}" y1="${y}" x2="${width - paddingR}" y2="${y}" />`;
+    svg += `<text class="strlabel" x="${paddingL - 8}" y="${y + 4 * sc}" text-anchor="end"${sc > 1 ? ` font-size="${11 * sc}"` : ''}>${stringNames[s]}</text>`;
+  }
+
+  const freqFrets = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24];
+  for (let f = fretStart; f <= fretEnd; f++) {
+    if (freqFrets.includes(f)) {
+      const x = paddingL + cellW * (f - fretStart) + cellW / 2;
+      svg += `<text class="fretnum" x="${x}" y="${paddingT - 4 * sc}" text-anchor="middle"${sc > 1 ? ` font-size="${10 * sc}"` : ''}>${f}</text>`;
+    }
+  }
+
+  for (const pos of positions) {
+    if (pos.fret < fretStart || pos.fret > fretEnd) continue;
+    const ty = 5 - pos.stringIdx;
+    // Drop the +stringH/2 offset so the dot sits ON the string line, not in
+    // the cell below it.
+    const y = paddingT + stringH * ty;
+    const x = paddingL + cellW * (pos.fret - fretStart) + cellW / 2;
+
+    const cls = pos.isRoot ? 'note root' : 'note scale';
+    const r = (pos.isRoot ? 9 : 8) * sc;
+    svg += `<circle class="${cls}" cx="${x}" cy="${y}" r="${r}" />`;
+
+    // Label inside dot: every dot shows the actual note name (C, D, E, F#, etc.)
+    const labelTxt = pos.noteName ? pos.noteName.replace('b', '♭').replace('#', '♯') : '';
+    if (labelTxt) {
+      svg += `<text class="notelabel" x="${x}" y="${y + 3 * sc}" text-anchor="middle"${sc > 1 ? ` font-size="${9 * sc}"` : ''}>${labelTxt}</text>`;
+    }
+  }
+
+  svg += '</svg>';
+  return svg;
+}
+
+// =====================================================================
+//   RENDERING — CHORD DIAGRAM
+// =====================================================================
+
+function renderChordDiagram(voicing) {
+  if (!voicing) return '';
+
+  // Standard vertical chord diagram.
+  //   Columns (left → right) = strings: low E, A, D, G, B, high E.
+  //   Rows    (top  → bottom) = frets.
+  //   String labels live ABOVE the nut at the top of each column.
+  //   Muted (X) / open (O) indicators sit above the string label.
+  //   Pressed-fret dots sit at (string column, fret row).
+  //   "2fr" marker goes on the right side when the chord is up the neck.
+
+  const hasOpen = voicing.some(v => v === 0);
+  const positive = voicing.filter(v => v !== null && v > 0);
+  const minFret = positive.length ? Math.min(...positive) : 1;
+  const atNut = hasOpen && minFret <= 1;
+  const startFret = atNut ? 1 : minFret;
+  const fretCount = atNut ? 4 : 5;
+
+  const stringNames = ['E','A','D','G','B','E'];
+  const colW = 22;                        // width per string column
+  const rowH = 26;                        // height per fret row
+  const padTop  = 36;                     // room for string labels + open/muted row
+  const padBot  = 18;                     // a little breathing room
+  // Half-column gutter so the leftmost string sits AT the nut (no offset).
+  const padLeft = colW / 2;
+  const padRight = atNut ? colW / 2 : 26; // extra right margin for "Nfr" marker
+
+  // String lines, dot centers, labels, and open/muted marks all share the same
+  // x-positions: padLeft + colW * s for s = 0..5. This is the same convention
+  // the scale view uses (dots drop the half-cell offset to sit ON the string).
+  const boardLeft = padLeft;
+  const boardRight = padLeft + colW * 5;  // last string line
+  const boardTop = padTop;
+  const boardBottom = padTop + rowH * fretCount;
+
+  const width = boardRight + padRight;
+  const height = boardBottom + padBot;
+
+  let svg = `<svg viewBox="0 0 ${width} ${height}" width="100%" style="display:block;max-width:${width}px;height:auto;margin:0 auto;" xmlns="http://www.w3.org/2000/svg">`;
+
+  // ---- Muted / open indicators + string labels (above the nut) ----
+  // cx = string line position. Same x as the dot, the label, and the string line
+  // itself — everything stacks on the string.
+  for (let s = 0; s < 6; s++) {
+    const cx = boardLeft + colW * s;
+    const v = voicing[s];
+    const labelY = padTop - 8;
+    const indicatorY = padTop - 22;
+
+    if (v === null) {
+      // muted X
+      svg += `<line class="muted-x" x1="${cx - 4}" y1="${indicatorY - 4}" x2="${cx + 4}" y2="${indicatorY + 4}" />`;
+      svg += `<line class="muted-x" x1="${cx - 4}" y1="${indicatorY + 4}" x2="${cx + 4}" y2="${indicatorY - 4}" />`;
+    } else if (v === 0) {
+      // open circle
+      svg += `<circle class="open" cx="${cx}" cy="${indicatorY}" r="4.5" />`;
+    }
+    // String label (always drawn, even for muted)
+    svg += `<text class="marker-text" x="${cx}" y="${labelY}" text-anchor="middle">${stringNames[s]}</text>`;
+  }
+
+  // ---- Nut / start-fret marker ----
+  if (atNut) {
+    // Thick vertical bar = the nut
+    svg += `<line class="nut" x1="${boardLeft}" y1="${boardTop}" x2="${boardLeft}" y2="${boardBottom}" />`;
+  } else {
+    // Top horizontal "shelf" marking where the visible window starts
+    svg += `<line class="nut" x1="${boardLeft}" y1="${boardTop}" x2="${boardRight}" y2="${boardTop}" />`;
+    // "Nfr" marker on the right — orange so you can spot which fret the
+    // chord starts on at a glance.
+    svg += `<text class="fret-label" x="${boardRight + 4}" y="${boardTop + 11}" text-anchor="start">${startFret}fr</text>`;
+  }
+
+  // ---- Vertical string lines ----
+  for (let s = 0; s < 6; s++) {
+    const x = boardLeft + colW * s;
+    svg += `<line class="str" x1="${x}" y1="${boardTop}" x2="${x}" y2="${boardBottom}" />`;
+  }
+  // ---- Horizontal fret lines (skip the top one when atNut, since it's the nut) ----
+  const fretStartRow = atNut ? 1 : 0;
+  for (let i = fretStartRow; i <= fretCount; i++) {
+    const y = boardTop + rowH * i;
+    svg += `<line class="fret" x1="${boardLeft}" y1="${y}" x2="${boardRight}" y2="${y}" />`;
+  }
+
+  // ---- Pressed-fret dots ----
+  for (let s = 0; s < 6; s++) {
+    const v = voicing[s];
+    if (v === null || v === 0) continue;
+    const fretRow = atNut ? v : (v - startFret + 1);
+    if (fretRow < 1 || fretRow > fretCount) continue;
+    const cx = boardLeft + colW * s;  // ON the string line, like the scale view
+    const cy = boardTop + rowH * (fretRow - 0.5);
+    svg += `<circle class="finger" cx="${cx}" cy="${cy}" r="9" />`;
+    // Finger number (1–4). Cap at 4.
+    const finger = Math.min(v, 4);
+    svg += `<text class="finger-label" x="${cx}" y="${cy + 4}">${finger}</text>`;
+  }
+
+  svg += '</svg>';
+  return svg;
+}
+
+// =====================================================================
+//   CHORD / SCALE LISTS PER KEY
+// =====================================================================
+
+function getDiatonicChords(key) {
+  const noteNames = KEY_SCALE_NOTES[key];
+  const triads = [];
+  const sevenths = [];
+  for (let i = 0; i < 7; i++) {
+    const root = noteNames[i];
+    triads.push({
+      degree: DIATONIC_DEGREES[i],
+      root,
+      quality: MAJOR_TRIADS[i],
+      symbol: chordName(root, MAJOR_TRIADS[i]),
+      voicing: VOICINGS[MAJOR_TRIADS[i]] && VOICINGS[MAJOR_TRIADS[i]][root] ? VOICINGS[MAJOR_TRIADS[i]][root] : null,
+    });
+    sevenths.push({
+      degree: DIATONIC_DEGREES[i],
+      root,
+      quality: MAJOR_7THS[i],
+      symbol: chordName(root, MAJOR_7THS[i]),
+      voicing: VOICINGS[MAJOR_7THS[i]] && VOICINGS[MAJOR_7THS[i]][root] ? VOICINGS[MAJOR_7THS[i]][root] : null,
+    });
+  }
+  return { triads, sevenths };
+}
+
+function getSecondaryChords(key) {
+  const noteNames = KEY_SCALE_NOTES[key];
+  const root = noteNames[0];
+  const b3 = noteNames[2]; // iii in major = b3... wait that's b3 interval
+  // Wait, MAJOR_TRIADS[2]='m' which is the iii chord (built on 3rd degree, which is noteNames[2]).
+  // The 3rd degree of major scale = major 3rd, e.g., in C: E. C minor = C,Eb,G. Hmm, so E (3rd) in major is major 3rd.
+  // The b3 of C major would be Eb (relative minor root), which is noteNames[5] of C major (A is vi, but A is the 6th). Hmm wait.
+  // C major scale: C D E F G A B. C's b3 = Eb = not in scale. So b3 isn't in key.
+  // For chord substitutions, V/V means chord built on 5th degree of V (which is 2nd degree of key).
+  // V = noteNames[4] (e.g., G in C). V/V = chord on the 5th degree of G = D (noteNames[1]).
+  // So V/V typically means "D7 in key of C" (a secondary dominant resolving to G).
+
+  // bVII in major = note a whole step below root (e.g., Bb in C major)
+  // To spell: bVII = letter below the root by step. For C: Bb. For G: F#. (Whole step down.)
+  // For C major: bVII = Bb (one whole step below C). That's the same as IV's root +4? Wait.
+  // Actually bVII = flat-7 of major scale. For C major, scale is C D E F G A B. b7 = Bb. bVII chord = Bb major.
+  // For G major: G A B C D E F#. b7 = F. bVII = F major.
+
+  // bIII = flat-3 = b3rd. For C: Eb. For G: Bb.
+  // bVI = flat-6. For C: Ab. For G: E natural? No wait, G major has no E#... E natural IS in G major. bVI of G = Eb.
+  // Hmm, G major = G A B C D E F#. bVI would be Eb (b6 from G). That's borrowed from G minor.
+
+  // For simplicity and accuracy, I'll express these by walking semitones from root.
+  function n(rootNote, semitones) {
+    const start = PC_MAP[rootNote];
+    const target = (start + semitones + 12 * 4) % 12;
+    const sharpName = PC_NAMES[target];
+    return isFlatKey(key) ? (SHARP_TO_FLAT[sharpName] || sharpName) : sharpName;
+  }
+
+  const v = noteNames[4]; // 5th degree
+  const ii = noteNames[1]; // 2nd degree
+
+  // V/V — root is +5 semitones from V (= +7 semitones from I, since V is +7)
+  const vOverVRoot = n(v, 7);
+  // ii/V — root is +2 from V (= +5 from I, since V is +7. wait +7+2 = +9 from I)
+  // Actually ii is a 2nd above i, so ii is +2 from I. ii/V means ii of V = 2nd above V = +9 from I.
+  // Hmm but ii is also +2 from I, not +9. So ii/V root = V + 2 semitones = G + 2 = A (in key of C).
+  // In key of C: V = G, ii/V root = A. So ii/V = Am7? Yes.
+  // But the common name "ii/V" means the ii chord of the V key. V's ii = V's 2nd scale degree = +2 from V.
+  // So in C major: V=G, ii/V chord is built on +2 from G = A. Symbol = Am7.
+  const iiOverVRoot = n(v, 2);
+
+  const secDom = chordName(vOverVRoot, '7');
+  const iiOfV = chordName(iiOverVRoot, 'm7');
+
+  const bVII = chordName(n(root, -2), 'M');
+  const bIII = chordName(n(root, 3), 'M');
+  const bVI = chordName(n(root, -4), 'M');
+  const iv = chordName(noteNames[3], 'm');
+  const IVsus = chordName(noteNames[3], 'sus4');
+  const V7sus4 = chordName(v, '7sus4');
+
+  return [
+    { label: 'V/V', desc: 'secondary dominant', symbol: secDom, root: vOverVRoot },
+    { label: 'ii/V', desc: 'precedes V', symbol: iiOfV, root: iiOverVRoot },
+    { label: 'bVII', desc: 'borrowed', symbol: bVII, root: n(root, -2) },
+    { label: 'bIII', desc: 'borrowed', symbol: bIII, root: n(root, 3) },
+    { label: 'bVI', desc: 'borrowed', symbol: bVI, root: n(root, -4) },
+    { label: 'iv', desc: 'minor (borrowed)', symbol: iv, root: noteNames[3] },
+    { label: 'IVsus4', desc: 'suspended 4th', symbol: IVsus, root: noteNames[3] },
+    { label: 'V7sus4', desc: 'suspended 4th', symbol: V7sus4, root: v },
+  ];
+}
+
+// =====================================================================
+//   RENDERING — KEY PANEL
+// =====================================================================
+
+function renderChordCard(c, opts = {}) {
+  const highlight = opts.highlight;
+  const isHL = highlight && c.root === highlight;
+  return `
+    <div class="chord-box flex flex-col items-center min-w-[100px] px-2 py-2 bg-white dark:bg-slate-900 rounded-lg border ${isHL ? 'border-orange-500 ring-1 ring-orange-500' : 'border-slate-200 dark:border-slate-800'}">
+      <div class="font-mono text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">${c.degree || ''}</div>
+      <div class="h-[120px] flex items-center justify-center">
+        ${c.voicing ? renderChordDiagram(c.voicing) : `<div class="text-xs text-slate-400">—</div>`}
+      </div>
+      <div class="mt-1 font-mono text-sm font-bold tracking-tight ${isHL ? 'text-orange-500' : ''}">${c.symbol}</div>
+      ${c.desc ? `<div class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">${c.desc}</div>` : ''}
+    </div>
+  `;
+}
+
+function renderSecondaryChordCard(c) {
+  const voicing = VOICINGS[c.quality || 'M'] && VOICINGS[c.quality || 'M'][c.root];
+  return `
+    <div class="flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-slate-200 dark:border-slate-800 min-w-[140px]">
+      <div class="font-mono text-[11px] font-bold text-slate-500 dark:text-slate-400 min-w-[44px]">${c.label}</div>
+      <div class="font-mono text-sm font-semibold">${c.symbol}</div>
+    </div>
+  `;
+}
+
+function renderScaleCard(key, scaleName, opts = {}) {
+  const positions = getScalePositions(key, scaleName, opts.fretStart || 0, opts.fretEnd || 14);
+  const intervals = SCALE_INTERVALS[scaleName];
+  const rootPC = noteToPC(key);
+  const sc = opts.scale || 1;
+
+  const noteNames = intervals.map(i => pcToName((rootPC + i) % 12, key));
+  const noteChips = noteNames.map((nm, i) => {
+    const isRoot = i === 0;
+    const chipSize = sc > 1 ? 'min-w-[56px] h-14 px-3 text-base' : 'min-w-[28px] h-7 px-1.5 text-[11px]';
+    return `<span class="inline-flex items-center justify-center ${chipSize} rounded-md font-mono font-bold ${isRoot ? 'bg-orange-500 text-white' : 'bg-indigo-500 text-white'}">${nm}</span>`;
+  }).join('');
+
+  const fretboardSvg = renderFretboard(positions, { fretStart: opts.fretStart || 0, fretEnd: opts.fretEnd || 14, scale: sc });
+
+  const headingSize = sc > 1 ? 'text-3xl sm:text-4xl' : 'text-sm sm:text-base';
+  const formulaSize = sc > 1 ? 'text-base sm:text-lg mt-1' : 'text-xs mt-0.5';
+  const labelSize = sc > 1 ? 'text-base sm:text-lg' : 'text-[11px]';
+
+  return `
+    <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
+      <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-3 flex-wrap">
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <h3 class="font-semibold ${headingSize} tracking-tight">${SCALE_NAMES[scaleName]}</h3>
+            <button type="button" class="scale-expand-btn shrink-0 w-7 h-7 inline-flex items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-orange-50 hover:border-orange-300 hover:text-orange-600 dark:hover:bg-orange-950/40 dark:hover:text-orange-400 transition" data-key="${key}" data-scale="${scaleName}" aria-label="Expand ${SCALE_NAMES[scaleName]} diagram" title="Expand diagram">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/></svg>
+            </button>
+          </div>
+          <div class="text-slate-500 dark:text-slate-400 font-mono ${formulaSize}">${SCALE_FORMULAS[scaleName]}</div>
+        </div>
+        <div class="flex gap-1 flex-wrap">${noteChips}</div>
+      </div>
+      <div class="fb px-2 py-2 overflow-x-auto">${fretboardSvg}</div>
+      <div class="px-4 py-2 ${labelSize} text-slate-500 dark:text-slate-400 flex gap-3 flex-wrap border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+        <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-full bg-orange-500"></span>root (1)</span>
+        <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-full bg-indigo-500"></span>scale tone (2–7)</span>
+        <span class="ml-auto font-mono">frets 0–14</span>
+      </div>
+    </div>
+  `;
+}
+
+// =====================================================================
+//   LICKS — universal patterns transposed per key
+// =====================================================================
+
+// Find the lowest "root on low E" fret for the key, also any natural open string root
+function findRootPosition(key) {
+  const rootPC = noteToPC(key);
+  // prefer low E string
+  for (let f = 0; f <= 14; f++) {
+    if (((STANDARD_TUNING[0] + f) % 12) === rootPC) return { stringIdx: 0, fret: f };
+  }
+  return null;
+}
+
+function transposeTabForKey(tabTemplate, key) {
+  // tabTemplate: array of objects { line: 'e', beats: [{offset, type, fretOrText}] }
+  // Each beat shows a fret offset from the reference root position. We compute absolute frets.
+  const ref = findRootPosition(key);
+  if (!ref) return tabTemplate.raw || '';
+  const refFret = ref.fret;
+
+  // Each line: 'e' | 'B' | 'G' | 'D' | 'A' | 'E' (top = high E, bottom = low E)
+  // Build columns of width that fits max fret number.
+  const labelToStringIdx = { 'e': 5, 'B': 4, 'G': 3, 'D': 2, 'A': 1, 'E': 0 };
+  const lines = ['e','B','G','D','A','E'];
+  const beats = tabTemplate.beats;
+  const results = {};
+  for (const ln of lines) results[ln] = [];
+
+  for (const beat of beats) {
+    for (const ln of lines) {
+      results[ln].push({ type: '-', data: '---' });
+    }
+    for (const note of beat.notes) {
+      const si = labelToStringIdx[note.line];
+      const fretAbs = note.offset + refFret;
+      // Negative frets clamp to "x" (or just leave as ---)
+      const fretTxt = fretAbs < 0 ? '---' : String(fretAbs);
+      // Maintain column width
+      const cur = results[note.line][results[note.line].length - 1];
+      cur.type = 'note';
+      cur.data = fretTxt;
+    }
+  }
+
+  // Build output strings with column alignment
+  // Each beat is roughly "-XX-" wide (4 chars). For larger frets (10+), make wider.
+  const maxFret = Math.max(...beats.flatMap(b => b.notes.map(n => n.offset + refFret)).filter(f => f >= 0), refFret);
+  const colW = String(maxFret).length === 1 ? 3 : String(maxFret).length + 1;
+  const padFret = (f) => {
+    const s = String(f);
+    return s + '-'.repeat(colW - s.length);
+  };
+
+  const out = [];
+  for (const ln of lines) {
+    const cols = results[ln].map(c => {
+      if (c.type === '-') return '-'.repeat(colW + 1) + '-';
+      return '-' + padFret(c.data) + '-';
+    });
+    out.push(`${ln}|${cols.join('')}|`);
+  }
+  return out.join('\n');
+}
+
+// Universal lick templates — relative to "root on low E" position
+// Each template: { name, description, positionLabel, beats: [{ notes: [{line, offset, modifier?}] }], raw?: string }
+const LICK_TEMPLATES = [
+  {
+    name: 'Pentatonic box 1 — ascending run',
+    description: 'Classic 5-note minor pentatonic box pattern. Box 1 / "E-shape" position. Use alternate picking.',
+    positionLabel: 'low E root',
+    beats: [
+      { notes: [{ line: 'E', offset: 0 }] },
+      { notes: [{ line: 'E', offset: 3 }] },
+      { notes: [{ line: 'A', offset: 0 }] },
+      { notes: [{ line: 'A', offset: 3 }] },
+      { notes: [{ line: 'D', offset: 0 }] },
+      { notes: [{ line: 'D', offset: 2 }] },
+      { notes: [{ line: 'G', offset: 0 }] },
+      { notes: [{ line: 'G', offset: 2 }] },
+      { notes: [{ line: 'B', offset: 0 }] },
+      { notes: [{ line: 'B', offset: 3 }] },
+      { notes: [{ line: 'e', offset: 0 }] },
+      { notes: [{ line: 'e', offset: 3 }] },
+    ],
+  },
+  {
+    name: 'Blues turnaround lick',
+    description: 'Bend on the b3 (blue note) — classic BB King / Clapton style. Quarter-step or half-step bend.',
+    positionLabel: 'low E root',
+    beats: [
+      { notes: [{ line: 'e', offset: 0 }] },
+      { notes: [{ line: 'e', offset: 3, bend: 'b3' }] },
+      { notes: [{ line: 'e', offset: 0 }] },
+      { notes: [{ line: 'B', offset: 0 }] },
+      { notes: [{ line: 'G', offset: 2 }] },
+      { notes: [{ line: 'D', offset: 0 }] },
+      { notes: [{ line: 'A', offset: 3 }] },
+      { notes: [{ line: 'D', offset: 0 }] },
+      { notes: [{ line: 'G', offset: 2 }] },
+      { notes: [{ line: 'B', offset: 3 }] },
+      { notes: [{ line: 'e', offset: 3 }] },
+      { notes: [{ line: 'e', offset: 0 }] },
+    ],
+  },
+  {
+    name: 'Major arpeggio across strings',
+    description: 'I chord arpeggio (1–3–5–1) played across six strings. Substitute into any progression.',
+    positionLabel: 'low E root',
+    beats: [
+      { notes: [{ line: 'E', offset: 0 }] },     // R
+      { notes: [{ line: 'A', offset: 0 }] },     // R (octave lower)
+      { notes: [{ line: 'D', offset: 0 }] },     // 5 (root on D string)
+      { notes: [{ line: 'D', offset: 2 }] },     // 6
+      { notes: [{ line: 'G', offset: 0 }] },     // R
+      { notes: [{ line: 'G', offset: 4 }] },     // 3 (root on G = +4)
+      { notes: [{ line: 'B', offset: 0 }] },     // R
+      { notes: [{ line: 'B', offset: 4 }] },     // 3 (root on B = +4? actually +3.5 no, +4 = D, on B string D = 5th of E. For E: R=0 on B-2... let me recompute)
+      { notes: [{ line: 'e', offset: 0 }] },     // R
+      { notes: [{ line: 'e', offset: 4 }] },     // 3
+      { notes: [{ line: 'e', offset: 0 }] },     // R
+    ],
+  },
+];
+
+// Quick helper: add a bend marker to a fret in the tab output
+function annotateTab(tabText, key) {
+  const ref = findRootPosition(key);
+  // Skip annotation, just return clean tab. Bend notes can be added in description.
+  return tabText;
+}
+
+function renderLickCard(template, key) {
+  const tabText = transposeTabForKey(template, key);
+  const ref = findRootPosition(key);
+  const posFret = ref ? ref.fret : 0;
+  const posLabel = `${posFret}${posFret === 0 ? '' : 'th'} fret`;
+
+  // Mark bended notes in template if any
+  const hasBends = template.beats.some(b => b.notes.some(n => n.bend));
+  const bendsNote = hasBends ? '<span class="inline-block ml-2 text-[10px] px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-600 dark:text-orange-400 font-mono">b = bend</span>' : '';
+
+  return `
+    <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
+      <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-800">
+        <div class="flex items-start justify-between gap-3 flex-wrap">
+          <div class="min-w-0">
+            <h3 class="font-semibold text-sm sm:text-base tracking-tight">${template.name}</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">${template.description}</p>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <span class="inline-block text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-mono">position: ${posLabel}</span>
+            ${bendsNote}
+          </div>
+        </div>
+      </div>
+      <div class="px-4 py-3 bg-slate-50 dark:bg-slate-950/50 overflow-x-auto">
+        <pre class="tab text-slate-700 dark:text-slate-300">${tabText.replace(/</g, '&lt;')}</pre>
+      </div>
+    </div>
+  `;
+}
+
+// =====================================================================
+//   COMMON PROGRESSIONS
+// =====================================================================
+
+function getProgressions(key) {
+  const nn = KEY_SCALE_NOTES[key];
+  const I = nn[0];
+  const ii = nn[1];
+  const iii = nn[2];
+  const IV = nn[3];
+  const V = nn[4];
+  const vi = nn[5];
+  const vii = nn[6];
+
+  // Chord symbols with quality from diatonic
+  const M = ['M','m','m','M','M','m','dim'];
+  const q = (i) => M[i];
+  return [
+    { name: 'I – IV – V', symbol: 'I–IV–V', chords: chordName(I,q(0)) + ' – ' + chordName(IV,q(3)) + ' – ' + chordName(V,q(4)), desc: 'Classic 3-chord progression' },
+    { name: 'I – V – vi – IV', symbol: 'I–V–vi–IV', chords: chordName(I,q(0)) + ' – ' + chordName(V,q(4)) + ' – ' + chordName(vi,q(5)) + ' – ' + chordName(IV,q(3)), desc: 'Pop / "Axis" progression' },
+    { name: 'ii – V – I', symbol: 'ii–V–I', chords: chordName(ii,q(1)) + ' – ' + chordName(V,q(4)) + ' – ' + chordName(I,q(0)), desc: 'Jazz cadence' },
+    { name: 'I – vi – IV – V', symbol: 'I–vi–IV–V', chords: chordName(I,q(0)) + ' – ' + chordName(vi,q(5)) + ' – ' + chordName(IV,q(3)) + ' – ' + chordName(V,q(4)), desc: '50s progression / doo-wop' },
+    { name: 'vi – IV – I – V', symbol: 'vi–IV–I–V', chords: chordName(vi,q(5)) + ' – ' + chordName(IV,q(3)) + ' – ' + chordName(I,q(0)) + ' – ' + chordName(V,q(4)), desc: 'Sensitive female chord progression' },
+    { name: '12-bar blues', symbol: 'I–IV–V', chords: chordName(I,q(0)) + ' | ' + chordName(IV,q(3)) + ' | ' + chordName(I,q(0)) + ' | ' + chordName(I,q(0)) + ' | ' + chordName(IV,q(3)) + ' | ' + chordName(IV,q(3)) + ' | ' + chordName(I,q(0)) + ' | ' + chordName(I,q(0)) + ' | ' + chordName(V,q(4)) + ' | ' + chordName(IV,q(3)) + ' | ' + chordName(I,q(0)) + ' | ' + chordName(V,q(4)), desc: 'Standard 12-bar blues' },
+  ];
+}
+
+// =====================================================================
+//   MAIN RENDERING
+// =====================================================================
+
+function renderKeyPanel(key) {
+  const label = KEY_LABELS[key];
+  const diatonic = getDiatonicChords(key);
+  const secondary = getSecondaryChords(key);
+  const progressions = getProgressions(key);
+
+  const scalesToShow = ['major', 'naturalMinor', 'majorPentatonic', 'minorPentatonic', 'blues', 'harmonicMinor', 'dorian', 'mixolydian'];
+
+  const sectionHeader = (n, title, desc) => `
+    <div class="flex items-baseline gap-3 mb-3 mt-6">
+      <span class="font-mono text-xs font-bold text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded">${n}</span>
+      <h2 class="text-lg sm:text-xl font-bold tracking-tight">${title}</h2>
+      ${desc ? `<p class="text-xs text-slate-500 dark:text-slate-400">${desc}</p>` : ''}
+    </div>
+  `;
+
+  // Chord row HTML
+  const triadRow = diatonic.triads.map(c => renderChordCard(c)).join('');
+  const seventhRow = diatonic.sevenths.map(c => renderChordCard(c, { highlight: ['I','IV','V'].includes(c.degree) ? null : null })).join('');
+
+  const secondaryRow = secondary.map(c => renderSecondaryChordCard(c)).join('');
+
+  // Scale cards
+  const scaleCards = scalesToShow.map(s => renderScaleCard(key, s)).join('');
+
+  // Licks
+  const lickCards = LICK_TEMPLATES.map(t => renderLickCard(t, key)).join('');
+
+  // Progressions table
+  const progRows = progressions.map(p => `
+    <div class="grid grid-cols-1 sm:grid-cols-[120px_1fr_auto] gap-2 sm:gap-4 px-4 py-3 border-b border-slate-200 dark:border-slate-800 last:border-0 items-start">
+      <div class="font-mono text-sm font-semibold">${p.symbol}</div>
+      <div class="font-mono text-xs sm:text-sm text-slate-600 dark:text-slate-400 break-words">${p.chords}</div>
+      <div class="text-xs text-slate-500 dark:text-slate-400">${p.desc}</div>
+    </div>
+  `).join('');
+
+  return `
+    <div class="space-y-2">
+      <div class="flex items-baseline gap-3 flex-wrap">
+        <h2 class="text-3xl sm:text-4xl font-bold tracking-tight">Key of ${label}</h2>
+        <span class="font-mono text-xs text-slate-500 dark:text-slate-400">root: ${KEY_SCALE_NOTES[key][0]} · 1=${KEY_SCALE_NOTES[key][0]} · 4=${KEY_SCALE_NOTES[key][3]} · 5=${KEY_SCALE_NOTES[key][4]}</span>
+      </div>
+      <p class="text-sm text-slate-600 dark:text-slate-400">All chords and scales spelled with the key's preferred enharmonics (sharps for sharp keys, flats for flat keys). Fretboard diagrams show note positions across the entire neck.</p>
+
+      ${sectionHeader('1', 'Diatonic Chords', 'Chords built from the 7 notes of the major scale')}
+      <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+        <h3 class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Triads</h3>
+        <div class="flex gap-3 overflow-x-auto pb-2">${triadRow}</div>
+        <h3 class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3 mt-4">7th chords</h3>
+        <div class="flex gap-3 overflow-x-auto pb-2">${seventhRow}</div>
+      </div>
+
+      ${sectionHeader('2', 'Common Substitutions & Borrowed Chords', 'Useful variations outside the diatonic set')}
+      <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+        <div class="flex gap-2 flex-wrap">${secondaryRow}</div>
+      </div>
+
+      ${sectionHeader('3', 'Scales', 'Each scale shows intervals, spelled notes, and a fretboard diagram across frets 0–14')}
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">${scaleCards}</div>
+
+      ${sectionHeader('4', 'Licks & Riffs', 'Three classic patterns transposed to this key')}
+      <div class="space-y-3">${lickCards}</div>
+
+      ${sectionHeader('5', 'Common Progressions', 'Standard chord progressions using the diatonic chords')}
+      <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
+        ${progRows}
+      </div>
+
+      <div class="text-xs text-slate-500 dark:text-slate-400 mt-8 leading-relaxed border-t border-slate-200 dark:border-slate-800 pt-4">
+        <strong class="text-slate-700 dark:text-slate-300">Quick reference:</strong>
+        Major scale intervals: <span class="font-mono">1 2 3 4 5 6 7</span> ·
+        Natural minor: <span class="font-mono">1 2 b3 4 5 b6 b7</span> ·
+        Harmonic minor: <span class="font-mono">1 2 b3 4 5 b6 7</span> ·
+        Major pentatonic: <span class="font-mono">1 2 3 5 6</span> ·
+        Minor pentatonic: <span class="font-mono">1 b3 4 5 b7</span> ·
+        Blues: <span class="font-mono">1 b3 4 b5 5 b7</span>
+      </div>
+    </div>
+  `;
+}
+
+function buildKeyTabs() {
+  const tabs = document.getElementById('key-tabs');
+  tabs.innerHTML = '';
+  for (const key of KEYS) {
+    const btn = document.createElement('button');
+    btn.className = 'key-tab px-3 py-2 rounded-lg text-sm font-mono font-semibold border border-slate-200 dark:border-slate-800 transition';
+    btn.textContent = KEY_LABELS[key];
+    btn.dataset.key = key;
+    btn.onclick = () => switchKey(key);
+    tabs.appendChild(btn);
+  }
+}
+
+function switchKey(key) {
+  document.querySelectorAll('.key-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.key === key);
+  });
+  const main = document.getElementById('main-content');
+  main.innerHTML = renderKeyPanel(key);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// =====================================================================
+//   SCALE EXPAND MODAL
+// =====================================================================
+
+let scaleModalLastFocus = null;
+
+function openScaleModal(key, scaleName) {
+  const modal = document.getElementById('scale-modal');
+  const body = document.getElementById('scale-modal-body');
+  const title = document.getElementById('scale-modal-title');
+  const formula = document.getElementById('scale-modal-formula');
+  if (!modal || !body) return;
+
+  scaleModalLastFocus = document.activeElement;
+
+  title.textContent = `${KEY_LABELS[key] || key} · ${SCALE_NAMES[scaleName]}`;
+  formula.textContent = SCALE_FORMULAS[scaleName];
+
+  // Re-render the scale card at 2.5x scale for the modal.
+  // Note chip + label sizes also bump via the opts.scale branch in renderScaleCard.
+  body.innerHTML = renderScaleCard(key, scaleName, { scale: 2.5 });
+
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  // Focus the close button for keyboard users.
+  const closeBtn = document.getElementById('scale-modal-close');
+  if (closeBtn) closeBtn.focus();
+}
+
+function closeScaleModal() {
+  const modal = document.getElementById('scale-modal');
+  if (!modal || !modal.classList.contains('open')) return;
+  modal.classList.remove('open');
+  document.body.style.overflow = '';
+  const body = document.getElementById('scale-modal-body');
+  if (body) body.innerHTML = '';
+  if (scaleModalLastFocus && typeof scaleModalLastFocus.focus === 'function') {
+    scaleModalLastFocus.focus();
+  }
+  scaleModalLastFocus = null;
+}
+
+function initScaleModal() {
+  // Event delegation — the cards are re-rendered on every key switch,
+  // so we listen on document and filter by class.
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.scale-expand-btn');
+    if (btn) {
+      e.preventDefault();
+      openScaleModal(btn.dataset.key, btn.dataset.scale);
+      return;
+    }
+    const backdrop = e.target.closest('#scale-modal-backdrop');
+    if (backdrop) {
+      closeScaleModal();
+      return;
+    }
+    const closeBtn = e.target.closest('#scale-modal-close');
+    if (closeBtn) {
+      e.preventDefault();
+      closeScaleModal();
+    }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeScaleModal();
+  });
+}
+
+// =====================================================================
+//   THEME TOGGLE
+// =====================================================================
+
+function initTheme() {
+  const btn = document.getElementById('theme-toggle');
+  const html = document.documentElement;
+  btn.onclick = () => {
+    html.classList.toggle('dark');
+    try { localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light'); } catch(e) {}
+  };
+  // Initial state: HTML has "dark" by default for dark-first design
+  try {
+    const saved = localStorage.getItem('theme');
+    if (saved === 'light') html.classList.remove('dark');
+  } catch(e) {}
+}
+
+// =====================================================================
+//   INIT
+// =====================================================================
+
+buildKeyTabs();
+initTheme();
+initScaleModal();
+switchKey('C');
+</script>
+</body>
+</html>
